@@ -1,2 +1,2 @@
 # Tenmo
-Second Tech Elevator cap stone pair programmed with Jim Still. Allows users to simulate sending money to each other's accounts. Uses a RESTful API as well as some database connectivity enable by Spring.
+Second Tech Elevator cap stone project. Allows users to simulate sending money to each other's accounts. Uses a RESTful API as well as database connectivity enable by Java Spring.
