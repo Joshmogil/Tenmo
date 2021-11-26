@@ -28,13 +28,13 @@ public class AccountController {
 
 //get an account object
 
-@RequestMapping(path = "account/{id}", method = RequestMethod.GET)
-public Account getAccount(@PathVariable long userid) {
+    @RequestMapping(path = "account/{id}", method = RequestMethod.GET)
+    public Account getAccount(@PathVariable long userid) {
 
-    Account account = accountDao.getAccount(userid);
-    return account;
+        Account account = accountDao.getAccount(userid);
+        return account;
 
-}
+    }
 
 
 // Return current balance

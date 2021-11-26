@@ -32,16 +32,18 @@ private static final String API_BASE_URL = "http://localhost:8080/";
     private ConsoleService console;
     private AuthenticationService authenticationService;
     private AccountService accountService;
+    private TransferService transferService;
 
     public static void main(String[] args) {
-    	App app = new App(new ConsoleService(System.in, System.out), new AuthenticationService(API_BASE_URL), new AccountService(API_BASE_URL));
+    	App app = new App(new ConsoleService(System.in, System.out), new AuthenticationService(API_BASE_URL), new AccountService(API_BASE_URL), new TransferService(API_BASE_URL));
     	app.run();
     }
 
-    public App(ConsoleService console, AuthenticationService authenticationService,AccountService accountService) {
+    public App(ConsoleService console, AuthenticationService authenticationService,AccountService accountService,TransferService transferService) {
 		this.console = console;
 		this.authenticationService = authenticationService;
 		this.accountService = accountService;
+		this.transferService = transferService;
 	}
 
 	public void run() {
@@ -49,13 +51,9 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 		System.out.println("* Welcome to TEnmo! *");
 		System.out.println("*********************");
 
-
-
 		registerAndLogin();
 		mainMenu();
 
-		//TransferService transferService = new TransferService(API_BASE_URL, currentUser);  <- remove this
-		//AccountService accountService = new AccountService(API_BASE_URL, currentUser); <- remove this
 	}
 
 	private void mainMenu() {
@@ -76,6 +74,17 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 		}
 	}
 
+	/* ViewCurrentBalance method --Notes
+	--- client side ---
+	* >calls getAccountBalance from account service
+	* >getAccountBalance takes the user id from Authenticated User, uses it to make auth entity
+	* >getAccountBalance makes and http request using user id and the auth entity to make a GET request to the server-side API
+	--- Server side ---
+	* accountService.getBalance makes get request on path "http://localhost:8080/balance/{id}" to account controller,
+	  with id passed in as a path variable, the auth token is passed in the headers
+	* the account controller uses the account specific data access object (accountDao) to grab an account object, then grabs the account balance
+	* account controller sends back the account balance
+	* */
 	private void viewCurrentBalance() {
 
 		try {
@@ -88,10 +97,8 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 	private void viewTransferHistory() {
 		//shows user's past transfers pulls from the database
 
-		TransferService transferService = new TransferService(API_BASE_URL, currentUser);
-
 		try {
-			transferService.getAllTransfers();
+			transferService.getAllTransfers(currentUser);
 		} catch (NullPointerException e) {
 			System.out.println("No transfers found");
 		}
@@ -102,7 +109,7 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 			if (enteredTransferIDorZero == 0) {
 				mainMenu(); //"0" is the input to go back to the main menu, it is never used as a transfer ID
 			}else {
-				transferService.getSingleTransfer(enteredTransferIDorZero);
+				transferService.getSingleTransfer(enteredTransferIDorZero, currentUser);
 			}
 		} catch (NullPointerException e) {
 			System.out.println("Transfer ID Invalid.");
@@ -112,13 +119,23 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 		}
 
 	}
+	/* SendBucks method --Notes
+	--- client side ---
+	* >calls getAccountBalance from account service
+	* >getAccountBalance takes the user id from Authenticated User, uses it to make auth entity
+	* >getAccountBalance makes and http request using user id and the auth entity to make a GET request to the server-side API
+	--- Server side ---
+	* accountService.getBalance makes get request on path "http://localhost:8080/balance/{id}" to account controller,
+	  with id passed in as a path variable, the auth token is passed in the headers
+	* the account controller uses the account specific data access object (accountDao) to grab an account object, then grabs the account balance
+	* account controller sends back the account balance
+	* */
 
 	private void sendBucks() {
     	//show a list of users
 		//-> user selects user to transfer to from list of users
 		//-> user enters amount to be sent in transfer
 
-		TransferService transferService = new TransferService(API_BASE_URL, currentUser);
 
 		try {
 			accountService.findAllUsers(currentUser);
@@ -136,9 +153,9 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 
 		try {
 
-			newTransfer = transferService.createTransfer(currentUser.getUser().getId(), enteredUserID, enteredAmount);
+			newTransfer = transferService.createTransfer(currentUser.getUser().getId(), enteredUserID, enteredAmount, currentUser);
 
-			newTransferCheck = transferService.getSingleTransfer(newTransfer.getTransfer_id());
+			newTransferCheck = transferService.getSingleTransfer(newTransfer.getTransfer_id(),currentUser);
 
 			if (!newTransferCheck.equals(null)) {
 				System.out.println("Transfer successfully processed");

@@ -1,13 +1,12 @@
 package com.techelevator.tenmo.controller;
 
-import com.techelevator.tenmo.dao.AccountDao;
+
 import com.techelevator.tenmo.dao.TransferDao;
-import com.techelevator.tenmo.dao.UserDao;
 import com.techelevator.tenmo.model.Transfer;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
+
 import java.util.List;
 
 @RestController
@@ -24,7 +23,7 @@ public class TransferController {
     // Create new transfer
 
 
-    @RequestMapping(path = "transfers", method = RequestMethod.POST)//make a user not found exception
+    @RequestMapping(path = "transfers", method = RequestMethod.POST)
     public Transfer createTransfer(@RequestBody Transfer transfer) {
 
         Transfer createdTransfer = transferDao.createTransfer(transfer.getUser_id_From(),transfer.getUser_id_To(),transfer.getAmount());
@@ -36,7 +35,7 @@ public class TransferController {
     //Get Single Transfer
 
 
-    @RequestMapping(path = "transfers/{transferID}", method = RequestMethod.GET)//make a transfer not found exception
+    @RequestMapping(path = "transfers/{transferID}", method = RequestMethod.GET)
     public Transfer getSingleTransfer(@PathVariable long transferID){
 
         Transfer singleTransfer = transferDao.getSingleTransfer(transferID);

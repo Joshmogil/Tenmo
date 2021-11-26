@@ -16,21 +16,19 @@ public class TransferService {
 
     private String API_BASE_URL;
     private RestTemplate restTemplate = new RestTemplate();
-    private AuthenticatedUser currentUser;
 
-    public TransferService(String API_BASE_URL, AuthenticatedUser currentUser) {
+    public TransferService(String API_BASE_URL) {
         this.API_BASE_URL = API_BASE_URL;
-        this.currentUser = currentUser;
     }
 
     //Get single Transfer by Transfer ID
-    public Transfer getSingleTransfer(long transferID) {
+    public Transfer getSingleTransfer(long transferID, AuthenticatedUser currentUser) {
         Transfer currentTransfer = null;
 
         try {
             ResponseEntity<Transfer> response =
                     restTemplate.exchange(API_BASE_URL + "transfers/" + transferID,
-                            HttpMethod.GET, makeAuthEntity(), Transfer.class);
+                            HttpMethod.GET, makeAuthEntity(currentUser), Transfer.class);
             currentTransfer = response.getBody();
             System.out.println("");
             if(!currentTransfer.equals(null)) {
@@ -55,7 +53,7 @@ public class TransferService {
 
     //Get all Transfers by UserID
 
-    public Transfer[] getAllTransfers() {
+    public Transfer[] getAllTransfers(AuthenticatedUser currentUser) {
 
         Transfer[] allTransfers = null;
 
@@ -66,7 +64,7 @@ public class TransferService {
             System.out.println("ID          From/To                 Amount");
             System.out.println("-------------------------------------------");
 
-            allTransfers = restTemplate.exchange(API_BASE_URL + "transfers/" + currentUser.getUser().getId() + "/all", HttpMethod.GET, makeAuthEntity(), Transfer[].class).getBody();
+            allTransfers = restTemplate.exchange(API_BASE_URL + "transfers/" + currentUser.getUser().getId() + "/all", HttpMethod.GET, makeAuthEntity(currentUser), Transfer[].class).getBody();
             for (Transfer i : allTransfers) {
                 if (i.getTransfer_type_id() == 2) {
                     System.out.printf("%s  %13s  %20s \n", i.getTransfer_id(), "To: " + i.getUsername_to(), "$ " + i.getAmount());
@@ -83,7 +81,7 @@ public class TransferService {
 
         }
 
-        public Transfer createTransfer(long user_id_from, long user_id_to, BigDecimal amount) {
+        public Transfer createTransfer(long user_id_from, long user_id_to, BigDecimal amount, AuthenticatedUser currentUser) {
 
         Transfer newTransfer = new Transfer();
 
@@ -93,7 +91,7 @@ public class TransferService {
 
             try {
 
-                newTransfer = restTemplate.postForObject(API_BASE_URL + "transfers", makeTransferEntity(newTransfer), Transfer.class);
+                newTransfer = restTemplate.postForObject(API_BASE_URL + "transfers", makeTransferEntity(newTransfer, currentUser), Transfer.class);
 
             } catch (RestClientResponseException e) {
 
@@ -116,18 +114,16 @@ public class TransferService {
         return newTransfer;
         }
 
-    private HttpEntity<Transfer> makeTransferEntity(Transfer transfer) {
+    private HttpEntity<Transfer> makeTransferEntity(Transfer transfer, AuthenticatedUser currentUser) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(currentUser.getToken());
         return new HttpEntity<>(transfer, headers);
     }
 
-    private HttpEntity<Void> makeAuthEntity() {
+    private HttpEntity<Void> makeAuthEntity(AuthenticatedUser currentUser) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(currentUser.getToken());
         return new HttpEntity<>(headers);
-
-
     }
 }
