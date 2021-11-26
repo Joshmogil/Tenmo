@@ -25,10 +25,8 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 	private static final String MAIN_MENU_OPTION_VIEW_BALANCE = "View your current balance";
 	private static final String MAIN_MENU_OPTION_SEND_BUCKS = "Send TE bucks";
 	private static final String MAIN_MENU_OPTION_VIEW_PAST_TRANSFERS = "View your past transfers";
-	private static final String MAIN_MENU_OPTION_REQUEST_BUCKS = "Request TE bucks";
-	private static final String MAIN_MENU_OPTION_VIEW_PENDING_REQUESTS = "View your pending requests";
 	private static final String MAIN_MENU_OPTION_LOGIN = "Login as different user";
-	private static final String[] MAIN_MENU_OPTIONS = { MAIN_MENU_OPTION_VIEW_BALANCE, MAIN_MENU_OPTION_SEND_BUCKS, MAIN_MENU_OPTION_VIEW_PAST_TRANSFERS, MAIN_MENU_OPTION_REQUEST_BUCKS, MAIN_MENU_OPTION_VIEW_PENDING_REQUESTS, MAIN_MENU_OPTION_LOGIN, MENU_OPTION_EXIT };
+	private static final String[] MAIN_MENU_OPTIONS = { MAIN_MENU_OPTION_VIEW_BALANCE, MAIN_MENU_OPTION_SEND_BUCKS, MAIN_MENU_OPTION_VIEW_PAST_TRANSFERS, MAIN_MENU_OPTION_LOGIN, MENU_OPTION_EXIT };
 	
     private AuthenticatedUser currentUser;
     private ConsoleService console;
@@ -36,22 +34,28 @@ private static final String API_BASE_URL = "http://localhost:8080/";
     private AccountService accountService;
 
     public static void main(String[] args) {
-    	App app = new App(new ConsoleService(System.in, System.out), new AuthenticationService(API_BASE_URL));
+    	App app = new App(new ConsoleService(System.in, System.out), new AuthenticationService(API_BASE_URL), new AccountService(API_BASE_URL));
     	app.run();
     }
 
-    public App(ConsoleService console, AuthenticationService authenticationService) {
+    public App(ConsoleService console, AuthenticationService authenticationService,AccountService accountService) {
 		this.console = console;
 		this.authenticationService = authenticationService;
+		this.accountService = accountService;
 	}
 
 	public void run() {
 		System.out.println("*********************");
 		System.out.println("* Welcome to TEnmo! *");
 		System.out.println("*********************");
-		
+
+
+
 		registerAndLogin();
 		mainMenu();
+
+		//TransferService transferService = new TransferService(API_BASE_URL, currentUser);  <- remove this
+		//AccountService accountService = new AccountService(API_BASE_URL, currentUser); <- remove this
 	}
 
 	private void mainMenu() {
@@ -61,12 +65,8 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 				viewCurrentBalance();
 			} else if(MAIN_MENU_OPTION_VIEW_PAST_TRANSFERS.equals(choice)) {
 				viewTransferHistory();
-			} else if(MAIN_MENU_OPTION_VIEW_PENDING_REQUESTS.equals(choice)) {
-				viewPendingRequests();
 			} else if(MAIN_MENU_OPTION_SEND_BUCKS.equals(choice)) {
 				sendBucks();
-			} else if(MAIN_MENU_OPTION_REQUEST_BUCKS.equals(choice)) {
-				requestBucks();
 			} else if(MAIN_MENU_OPTION_LOGIN.equals(choice)) {
 				login();
 			} else {
@@ -78,10 +78,8 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 
 	private void viewCurrentBalance() {
 
-    	AccountService accountService = new AccountService(API_BASE_URL, currentUser);
-
 		try {
-			System.out.println("Your current account balance is: $" + accountService.getAccountBalance());
+			System.out.println("Your current account balance is: $" + accountService.getAccountBalance(currentUser));
 		} catch (NullPointerException e) {
 			System.out.println("Account empty.");
 		}
@@ -98,13 +96,14 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 			System.out.println("No transfers found");
 		}
 
-		Integer enteredTransferID = console.getUserInputInteger("Please enter transfer ID to view details (0 to cancel): ");
+		Integer enteredTransferIDorZero = console.getUserInputInteger("Please enter transfer ID to view details (0 to cancel): ");
 
 		try {
-			if (enteredTransferID == 0) {
-				mainMenu();
+			if (enteredTransferIDorZero == 0) {
+				mainMenu(); //"0" is the input to go back to the main menu, it is never used as a transfer ID
+			}else {
+				transferService.getSingleTransfer(enteredTransferIDorZero);
 			}
-			transferService.getSingleTransfer(enteredTransferID);
 		} catch (NullPointerException e) {
 			System.out.println("Transfer ID Invalid.");
 		}
@@ -114,26 +113,20 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 
 	}
 
-	private void viewPendingRequests() {
-		//show's requests that have status pending and are to the user
-		
-	}
-
 	private void sendBucks() {
     	//show a list of users
 		//-> user selects user to transfer to from list of users
 		//-> user enters amount to be sent in transfer
 
 		TransferService transferService = new TransferService(API_BASE_URL, currentUser);
-		AccountService accountService = new AccountService(API_BASE_URL, currentUser);
 
 		try {
-			accountService.findAllUsers();
+			accountService.findAllUsers(currentUser);
 		} catch (NullPointerException e) {
 			System.out.println("Account empty.");
 		}
-			Transfer newTransfer = new Transfer();
-			Transfer newTransferCheck = new Transfer();
+			Transfer newTransfer;
+			Transfer newTransferCheck;
 
 		Integer enteredUserID = console.getUserInputInteger("Enter ID of user you are sending to (0 to cancel): ");
 		if (enteredUserID == 0) {
@@ -157,7 +150,7 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 
 		}catch(NullPointerException f){
 
-			if(enteredAmount.compareTo(accountService.getAccountBalance()) == 1) {
+			if(enteredAmount.compareTo(accountService.getAccountBalance(currentUser)) == 1) {
 				System.out.println("Not enough balance.");
 			}
 
@@ -166,15 +159,6 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 			System.out.println();
 
 		}
-		
-	}
-
-	private void requestBucks() {
-		//show a list of users
-		//-> user selects user to request from from list of users
-		//-> user enters amount requested
-
-		// TODO Auto-generated method stub
 		
 	}
 	
