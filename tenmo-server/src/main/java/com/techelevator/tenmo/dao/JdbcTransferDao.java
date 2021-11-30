@@ -76,6 +76,9 @@ public class JdbcTransferDao implements TransferDao {
 
     }
 
+
+    //When the client posts a new transfer to the server the controller routes to this business logic
+    //runTransaction is the business logic that actually updates account balances, createTransfer simply creates a transfer on the database
     @Override
     public Transfer createTransfer( long from_user_id,long to_user_id, BigDecimal amount){
 
@@ -106,8 +109,7 @@ public class JdbcTransferDao implements TransferDao {
         long userFrom = transfer.getUser_id_From();
         long userTo = transfer.getUser_id_To();
         BigDecimal amount = transfer.getAmount();
-        String transferStatus = transfer.getTransfer_status();
-        String transferType = transfer.getTransfer_type();
+
 
         BigDecimal balance = getAccountBalance(transfer.getUser_id_From());
 

@@ -78,7 +78,7 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 	--- client side ---
 	* >calls getAccountBalance from account service
 	* >getAccountBalance takes the user id from Authenticated User, uses it to make auth entity
-	* >getAccountBalance makes and http request using user id and the auth entity to make a GET request to the server-side API
+	* >getAccountBalance makes an http request using user id and the auth entity to make a GET request to the server-side API
 	--- Server side ---
 	* accountService.getBalance makes get request on path "http://localhost:8080/balance/{id}" to account controller,
 	  with id passed in as a path variable, the auth token is passed in the headers
@@ -121,14 +121,9 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 	}
 	/* SendBucks method --Notes
 	--- client side ---
-	* >calls getAccountBalance from account service
-	* >getAccountBalance takes the user id from Authenticated User, uses it to make auth entity
-	* >getAccountBalance makes and http request using user id and the auth entity to make a GET request to the server-side API
-	--- Server side ---
-	* accountService.getBalance makes get request on path "http://localhost:8080/balance/{id}" to account controller,
-	  with id passed in as a path variable, the auth token is passed in the headers
-	* the account controller uses the account specific data access object (accountDao) to grab an account object, then grabs the account balance
-	* account controller sends back the account balance
+	* >calls findAllUsers() from accountService to display all users in system
+	* >calls createTransfer() from transferService, creates transfer instance using user input
+	* >uses getSingleTransfer() to check and see if the transfer was successful or not
 	* */
 
 	private void sendBucks() {
@@ -139,11 +134,10 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 
 		try {
 			accountService.findAllUsers(currentUser);
+			//shows the list of all users
 		} catch (NullPointerException e) {
-			System.out.println("Account empty.");
+			System.out.println("Account error.");
 		}
-			Transfer newTransfer;
-			Transfer newTransferCheck;
 
 		Integer enteredUserID = console.getUserInputInteger("Enter ID of user you are sending to (0 to cancel): ");
 		if (enteredUserID == 0) {
@@ -153,23 +147,24 @@ private static final String API_BASE_URL = "http://localhost:8080/";
 
 		try {
 
-			newTransfer = transferService.createTransfer(currentUser.getUser().getId(), enteredUserID, enteredAmount, currentUser);
+			if(enteredAmount.compareTo(accountService.getAccountBalance(currentUser)) == 1) { //if the user's balance is too low, transaction is not even initiated
+				System.out.println("Not enough balance.");
+			}else {
 
-			newTransferCheck = transferService.getSingleTransfer(newTransfer.getTransfer_id(),currentUser);
+				Transfer newTransfer = transferService.createTransfer(currentUser.getUser().getId(), enteredUserID, enteredAmount, currentUser);
 
-			if (!newTransferCheck.equals(null)) {
-				System.out.println("Transfer successfully processed");
-			}
+				Transfer newTransferCheck = transferService.getSingleTransfer(newTransfer.getTransfer_id(), currentUser);
 
-			if (newTransferCheck.equals(null)) {
-				System.out.println("Transfer failed.");
+				if (!newTransferCheck.equals(null)) {
+					System.out.println("Transfer successfully processed");
+				}
+
+				if (newTransferCheck.equals(null)) {
+					System.out.println("Transfer failed.");
+				}
 			}
 
 		}catch(NullPointerException f){
-
-			if(enteredAmount.compareTo(accountService.getAccountBalance(currentUser)) == 1) {
-				System.out.println("Not enough balance.");
-			}
 
 		}catch(Exception e){
 
